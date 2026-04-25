@@ -118,9 +118,9 @@ for (gene in genes){
     }
     if (length(pws2) > 0) {
       if (is.null(p)) {
-        p <- heatmap_by_sample(df_cor_pw[pws2, samples], tf, 'Pathways', lim = lim)
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], gene, 'Pathways', lim = lim)
       } else {
-        p <- heatmap_by_sample(df_cor_pw[pws2, samples], tf, 'Pathways', lim = lim) + p
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], gene, 'Pathways', lim = lim) + p
       }
     }
     if (length(receptors2) > 0) {
