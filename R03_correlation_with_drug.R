@@ -17,6 +17,7 @@ fname = 'dataframes/correlation_ravi/drug_with_%s/%s.csv'
 
 # plot metaprogram proportion
 df_mp = read.csv('dataframes/metaprogram_proportion.csv', row.names=1)
+threshold = 0.5
 
 for (drug in drugs){
   # read files
@@ -28,11 +29,11 @@ for (drug in drugs){
   df_cor_drug = my_read_csv(sprintf(fname, 'drug', drug))
   rownames(df_cor_drug) = str_extract(rownames(df_cor_drug), "^[^|]+")
   
-  ligands2 = filter_rows(df_cor_lig, use_abs = F)
-  receptors2 = filter_rows(df_cor_rec, use_abs = F)
-  pws2 = filter_rows(df_cor_pw, ntop = 8, use_abs = F)
-  tfs2 = filter_rows(df_cor_tf, use_abs = F)
-  drugs2 = filter_rows(df_cor_drug, threshold = 1, use_abs = F)
+  ligands2 = filter_rows(df_cor_lig, threshold=threshold, use_abs = F)
+  receptors2 = filter_rows(df_cor_rec, threshold=threshold, use_abs = F)
+  pws2 = filter_rows(df_cor_pw, ntop = 8, threshold=threshold, use_abs = F)
+  tfs2 = filter_rows(df_cor_tf, threshold=threshold, use_abs = F)
+  drugs2 = filter_rows(df_cor_drug, threshold=threshold, use_abs = F)
   genes2 = filter_rows(df_cor_gene, 
                        gene2remove=rownames(df_cor_lig) %>% union(rownames(df_cor_rec)), use_abs = F)
   
@@ -89,11 +90,11 @@ for (drug in drugs){
   df_cor_drug = my_read_csv(sprintf(fname, 'drug', drug))
   rownames(df_cor_drug) = str_extract(rownames(df_cor_drug), "^[^|]+")
   
-  ligands2 = filter_rows(df_cor_lig, use_abs = F, ncount = 4)
-  receptors2 = filter_rows(df_cor_rec, use_abs = F, ncount = 4)
-  pws2 = filter_rows(df_cor_pw, ntop = 8, use_abs = F, ncount = 4)
-  tfs2 = filter_rows(df_cor_tf, use_abs = F, ncount = 4)
-  drugs2 = filter_rows(df_cor_drug, threshold = 1, use_abs = F, ncount = 4)
+  ligands2 = filter_rows(df_cor_lig, threshold=threshold, use_abs = F, ncount = 4)
+  receptors2 = filter_rows(df_cor_rec, threshold=threshold, use_abs = F, ncount = 4)
+  pws2 = filter_rows(df_cor_pw, ntop = 8, threshold=threshold, use_abs = F, ncount = 4)
+  tfs2 = filter_rows(df_cor_tf, threshold=threshold, use_abs = F, ncount = 4)
+  drugs2 = filter_rows(df_cor_drug, threshold=threshold, use_abs = F, ncount = 4)
   genes2 = filter_rows(df_cor_gene, ncount = 4, 
                        gene2remove=rownames(df_cor_lig) %>% union(rownames(df_cor_rec)), use_abs = F)
   
@@ -105,42 +106,44 @@ for (drug in drugs){
   
   if (n>0){
     p <- NULL
-    if (length(drugs2) > 0) {
-      p <- heatmap_drug(df_cor_drug[drugs2, samples], drug, 'Drugs', lim = 1)
+    drug_rename = gsub("_", "\n", drug) %>% paste0('\n')
+    # if ((length(drugs2) > 0) & (length(drugs2) < n)) {
+    if (length(drugs2)>0){
+      p <- heatmap_drug(df_cor_drug[drugs2, samples], drug_rename, 'Drugs', lim = 1)
     }
     if (length(genes2) > 0) {
       if (is.null(p)) {
-        p <- heatmap_by_sample(df_cor_gene[genes2, samples], drug, 'Target Genes', lim = lim)
+        p <- heatmap_by_sample(df_cor_gene[genes2, samples], drug_rename, 'Target Genes', lim = lim)
       } else {
-        p <- heatmap_by_sample(df_cor_gene[genes2, samples], drug, 'Target Genes', lim = lim) + p
+        p <- heatmap_by_sample(df_cor_gene[genes2, samples], drug_rename, 'Target Genes', lim = lim) + p
       }
     }
     if (length(tfs2) > 0) {
       if (is.null(p)) {
-        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], drug, 'TFs', lim = lim)
+        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], drug_rename, 'TFs', lim = lim)
       } else {
-        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], drug, 'TFs', lim = lim) + p
+        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], drug_rename, 'TFs', lim = lim) + p
       }
     }
     if (length(pws2) > 0) {
       if (is.null(p)) {
-        p <- heatmap_by_sample(df_cor_pw[pws2, samples], drug, 'Pathways', lim = lim)
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], drug_rename, 'Pathways', lim = lim)
       } else {
-        p <- heatmap_by_sample(df_cor_pw[pws2, samples], drug, 'Pathways', lim = lim) + p
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], drug_rename, 'Pathways', lim = lim) + p
       }
     }
     if (length(receptors2) > 0) {
       if (is.null(p)) {
-        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], drug, 'Receptors', lim = lim)
+        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], drug_rename, 'Receptors', lim = lim)
       } else {
-        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], drug, 'Receptors', lim = lim) + p
+        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], drug_rename, 'Receptors', lim = lim) + p
       }
     }
     if (length(ligands2) > 0) {
       if (is.null(p)) {
-        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], drug, 'Ligands', lim = lim)
+        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], drug_rename, 'Ligands', lim = lim)
       } else {
-        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], drug, 'Ligands', lim = lim) + p
+        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], drug_rename, 'Ligands', lim = lim) + p
       }
     }
     
@@ -149,3 +152,4 @@ for (drug in drugs){
                  height = 6.5) ## Please tune if necessary.
   }
 }
+
