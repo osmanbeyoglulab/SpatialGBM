@@ -143,3 +143,88 @@ for (gene in genes){
                  height = 6.5) ## Please tune if necessary.
   }
 }
+
+# ========== ========== ========== ========== ==========
+
+genes = list.files(path = 'dataframes/correlation_ravi/gene_with_gene/', full.names = FALSE) %>% 
+  str_remove(".csv") %>% 
+  intersect(list.files(path = 'dataframes/correlation_ren/gene_with_gene/', full.names = FALSE) %>% 
+          str_remove(".csv"))
+dir.create('plots_website/correlation_comb/')
+dir.create('plots_website/correlation_comb/corr_with_gene')
+pname = 'plots_website/correlation_comb/corr_with_gene/%s.png'
+
+fname_ravi = 'dataframes/correlation_ravi/gene_with_%s/%s.csv'
+fname_ren = 'dataframes/correlation_ren/gene_with_%s/%s.csv'
+ncount = 9
+
+for (gene in genes){
+  # read files
+  df_cor_lig = my_combine_csv(c(sprintf(fname_ravi, 'ligand', gene), sprintf(fname_ren, 'ligand', gene)))
+  df_cor_rec = my_combine_csv(c(sprintf(fname_ravi, 'receptor', gene), sprintf(fname_ren, 'receptor', gene)))
+  df_cor_gene = my_combine_csv(c(sprintf(fname_ravi, 'gene', gene), sprintf(fname_ren, 'gene', gene)))
+  df_cor_tf = my_combine_csv(c(sprintf(fname_ravi, 'tf', gene), sprintf(fname_ren, 'tf', gene)))
+  df_cor_pw = my_combine_csv(c(sprintf(fname_ravi, 'pathway', gene), sprintf(fname_ren, 'pathway', gene)), 
+                             is_pathway = T)
+  df_cor_drug = my_combine_csv(c(sprintf(fname_ravi, 'drug', gene), sprintf(fname_ren, 'drug', gene)))
+  rownames(df_cor_drug) = str_extract(rownames(df_cor_drug), "^[^|]+")
+  
+  ligands2 = filter_rows(df_cor_lig, gene2remove = gene, ncount = ncount)
+  receptors2 = filter_rows(df_cor_rec, gene2remove = gene, ncount = ncount)
+  genes2 = filter_rows(df_cor_gene, ncount = ncount)
+  pws2 = filter_rows(df_cor_pw, ntop = 8, ncount = ncount)
+  tfs2 = filter_rows(df_cor_tf, ncount = ncount)
+  drugs2 = filter_rows(df_cor_drug, use_abs = F, ncount = ncount)
+  
+  n = length(c(ligands2, receptors2, genes2, tfs2, pws2, drugs2))
+  samples = colnames(df_cor_lig) %>% intersect(colnames(df_cor_rec)) %>% 
+    intersect(colnames(df_cor_tf)) %>% intersect(colnames(df_cor_gene)) %>% 
+    intersect(colnames(df_cor_pw)) %>% intersect(colnames(df_cor_drug))
+  lim = 0.8
+  
+  if (n>0){
+    p <- NULL
+    if (length(drugs2) > 0) {
+      p <- heatmap_drug(df_cor_drug[drugs2, samples], gene, 'Drugs', lim = 1)
+    }
+    if (length(genes2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_gene[genes2, samples], gene, 'Target Genes', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_gene[genes2, samples], gene, 'Target Genes', lim = lim) + p
+      }
+    }
+    if (length(tfs2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], gene, 'TFs', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], gene, 'TFs', lim = lim) + p
+      }
+    }
+    if (length(pws2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], gene, 'Pathways', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], gene, 'Pathways', lim = lim) + p
+      }
+    }
+    if (length(receptors2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], gene, 'Receptors', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], gene, 'Receptors', lim = lim) + p
+      }
+    }
+    if (length(ligands2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], gene, 'Ligands', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], gene, 'Ligands', lim = lim) + p
+      }
+    }
+    
+    my_save_plot(p, sprintf(pname, gene), 
+                 width = 5+0.2*n, ## Please tune if necessary.
+                 height = 12) ## Please tune if necessary.
+  }
+}

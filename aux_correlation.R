@@ -128,6 +128,17 @@ my_read_csv = function(fname, is_pathway=F){
   return(df)
 }
 
+my_combine_csv = function(fname_list, is_pathway=F){
+  df_list = list()
+  for (i in seq_along(fname_list)){
+    df_list[[i]] = my_read_csv(fname_list[i], is_pathway)
+  }
+  common_rows = Reduce(intersect, lapply(df_list, rownames))
+  df_combined = do.call(cbind, lapply(df_list, function(df){
+    df[common_rows, , drop=FALSE]
+  }))
+  return(df_combined)
+}
 
 filter_rows = function(df, ntop=20, threshold=0.5, ncount=5, use_abs=T, gene2remove=''){ ### Please tune ###
   # ntop=20: Keep top 20 rows by default (adjustable).

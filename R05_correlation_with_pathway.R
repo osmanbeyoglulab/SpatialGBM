@@ -151,3 +151,90 @@ for (pathway in pathways){
                  height = 6.5) ## Please tune if necessary.
   }
 }
+
+# ========== ========== ========== ========== ==========
+
+pathways = list.files(path = 'dataframes/correlation_ravi/pathway_with_pathway/', full.names = FALSE) %>% 
+  str_remove(".csv") %>% 
+  intersect(list.files(path = 'dataframes/correlation_ren/pathway_with_pathway/', full.names = FALSE) %>% 
+              str_remove(".csv"))
+dir.create('plots_website/correlation_comb/')
+dir.create('plots_website/correlation_comb/corr_with_pathway')
+pname = 'plots_website/correlation_comb/corr_with_pathway/%s.png'
+
+fname_ravi = 'dataframes/correlation_ravi/pathway_with_%s/%s.csv'
+fname_ren = 'dataframes/correlation_ren/pathway_with_%s/%s.csv'
+ncount = 9
+
+for (pathway in pathways){
+  # read files
+  df_cor_lig = my_combine_csv(c(sprintf(fname_ravi, 'ligand', pathway), sprintf(fname_ren, 'ligand', pathway)))
+  df_cor_rec = my_combine_csv(c(sprintf(fname_ravi, 'receptor', pathway), sprintf(fname_ren, 'receptor', pathway)))
+  df_cor_gene = my_combine_csv(c(sprintf(fname_ravi, 'gene', pathway), sprintf(fname_ren, 'gene', pathway)))
+  df_cor_tf = my_combine_csv(c(sprintf(fname_ravi, 'tf', pathway), sprintf(fname_ren, 'tf', pathway)))
+  df_cor_pw = my_combine_csv(c(sprintf(fname_ravi, 'pathway', pathway), sprintf(fname_ren, 'pathway', pathway)), 
+                             is_pathway = T)
+  df_cor_drug = my_combine_csv(c(sprintf(fname_ravi, 'drug', pathway), sprintf(fname_ren, 'drug', pathway)))
+  rownames(df_cor_drug) = str_extract(rownames(df_cor_drug), "^[^|]+")
+  
+  ligands2 = filter_rows(df_cor_lig, ncount = ncount)
+  receptors2 = filter_rows(df_cor_rec, ncount = ncount)
+  tfs2 = filter_rows(df_cor_tf, ncount = ncount)
+  pws2 = filter_rows(df_cor_pw, ntop = 8, ncount = ncount)
+  drugs2 = filter_rows(df_cor_drug, ntop = 8, use_abs = F, ncount = ncount)
+  genes2 = filter_rows(df_cor_gene, ncount = ncount,
+                       gene2remove=rownames(df_cor_lig) %>% union(rownames(df_cor_rec)))
+  
+  n = length(c(ligands2, receptors2, genes2, tfs2, pws2, drugs2))
+  samples = colnames(df_cor_lig) %>% intersect(colnames(df_cor_rec)) %>% 
+    intersect(colnames(df_cor_tf)) %>% intersect(colnames(df_cor_gene)) %>% 
+    intersect(colnames(df_cor_pw)) %>% intersect(colnames(df_cor_drug))
+  lim = 1
+  pathway2 = hallmarks[pathway]
+  
+  if (n>0){
+    p <- NULL
+    if (length(drugs2) > 0) {
+      p <- heatmap_drug(df_cor_drug[drugs2, samples], pathway2, 'Drugs', lim = 1)
+    }
+    if (length(genes2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_gene[genes2, samples], pathway2, 'Target Genes', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_gene[genes2, samples], pathway2, 'Target Genes', lim = lim) + p
+      }
+    }
+    if (length(tfs2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], pathway2, 'TFs', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_tf[tfs2, samples], pathway2, 'TFs', lim = lim) + p
+      }
+    }
+    if (length(pws2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], pathway2, 'Pathways', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_pw[pws2, samples], pathway2, 'Pathways', lim = lim) + p
+      }
+    }
+    if (length(receptors2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], pathway2, 'Receptors', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_rec[receptors2, samples], pathway2, 'Receptors', lim = lim) + p
+      }
+    }
+    if (length(ligands2) > 0) {
+      if (is.null(p)) {
+        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], pathway2, 'Ligands', lim = lim)
+      } else {
+        p <- heatmap_by_sample(df_cor_lig[ligands2, samples], pathway2, 'Ligands', lim = lim) + p
+      }
+    }
+    
+    my_save_plot(p, sprintf(pname, pathway), 
+                 width = 5+0.2*n, ## Please tune if necessary.
+                 height = 12) ## Please tune if necessary.
+  }
+}
